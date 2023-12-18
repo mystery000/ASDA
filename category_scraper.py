@@ -76,6 +76,8 @@ class AsdaScraper:
                     writer.writerow({"Link": product})
             
 def run_category_scraper():
+    print("Asda category scraper running...")
+    
     csv_file_name = "asda_product_links.csv"
     if os.path.exists(csv_file_name):
         os.remove(csv_file_name)
@@ -145,7 +147,7 @@ def run_category_scraper():
     finally:
         for process in processes:
             process.terminate()
-        logging.info("Asda product scraper finished")
+        logging.info("Asda category scraper finished")
 
 if __name__ == "__main__":
     run_category_scraper()    
