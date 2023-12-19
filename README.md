@@ -1,6 +1,6 @@
 # Description
 
-This is a trusted web scraper for extracting products from [ASDA](https://groceries.asda.com).
+This is a trusted web scraper for extracting products from [ASDA](https://groceries.asda.com) supermarket.
 
 # Usage
 
