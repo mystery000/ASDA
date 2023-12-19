@@ -129,7 +129,7 @@ def run_category_scraper():
                     
                     aisle_links.append(view_all_link) if view_all_link else aisle_links.extend(asda_links)
                     
-        process_count = 10
+        process_count = 6
         unit = math.floor(len(aisle_links) / process_count)
         
         processes = [

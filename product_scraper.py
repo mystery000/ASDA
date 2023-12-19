@@ -197,7 +197,7 @@ def run_product_scraper():
         
         asda_product_links = get_product_page_links()
                     
-        process_count = 10
+        process_count = 6
         unit = math.floor(len(asda_product_links) / process_count)
         
         processes = [
