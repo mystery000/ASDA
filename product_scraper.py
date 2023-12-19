@@ -10,12 +10,14 @@ import multiprocessing as mp
 from datetime import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from dotenv import load_dotenv
 from selenium.webdriver import Remote
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnection
 
+load_dotenv()
 
 def get_product_page_links() -> List[str]:
     csv_file_name = "asda_product_links.csv"
@@ -43,7 +45,6 @@ class AsdaProductScraper:
         chrome_options.add_argument("--start-maximized")
         for product_link in self._product_links:
             try:
-                print(product_link)
                 with Remote(self._sbr_connection, options=chrome_options) as driver:
                     driver.get(product_link)
                     WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "pdp-main-details")))
@@ -183,7 +184,7 @@ def run_product_scraper():
     processes: List[mp.Process] = []
     
     try:
-        SBR_WEBDRIVER = f"http://65.21.129.16:9515"
+        SBR_WEBDRIVER = f"http://{os.getenv('SELENIUM_WEBDRIVER_AUTH')}@{os.getenv('SELENIUM_SERVER_IP')}:{os.getenv('SELENIUM_SERVER_PORT')}"
         
         try:
             sbr_connection = ChromiumRemoteConnection(SBR_WEBDRIVER, "goog", "chrome")

@@ -7,12 +7,16 @@ import logging.handlers
 from typing import List
 import multiprocessing as mp
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver import Remote
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnection
+
+
+load_dotenv()
 
 class AsdaScraper:
     _aisle_links: List[str]
@@ -91,7 +95,7 @@ def run_category_scraper():
     processes: List[mp.Process] = []
     
     try:
-        SBR_WEBDRIVER = f"http://65.21.129.16:9515"
+        SBR_WEBDRIVER = f"http://{os.getenv('SELENIUM_WEBDRIVER_AUTH')}@{os.getenv('SELENIUM_SERVER_IP')}:{os.getenv('SELENIUM_SERVER_PORT')}"
         
         try:
             sbr_connection = ChromiumRemoteConnection(SBR_WEBDRIVER, "goog", "chrome")
