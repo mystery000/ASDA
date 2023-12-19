@@ -76,7 +76,7 @@ class AsdaProductScraper:
                         
                         if product_page is None: continue
                         
-                        source = "ASDA"
+                        source = "Asda"
                         
                         title_element = product_page.find("h1", class_="pdp-main-details__title")
                         title = title_element.get_text(strip=True) if title_element else None
