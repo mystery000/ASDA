@@ -94,7 +94,7 @@ def run_category_scraper():
         SELENIUM_GRID_IP_ADDRESSES = [
             "95.217.141.220:9515",
             "65.21.129.16:9515",
-            "135.181.212.76:9515",
+            "65.21.132.89:9515",
         ]
         
         sbr_connections = [ChromiumRemoteConnection(f"http://{IP}", "goog", "chrome") for IP in SELENIUM_GRID_IP_ADDRESSES]
