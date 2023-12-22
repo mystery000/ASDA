@@ -10,14 +10,12 @@ import multiprocessing as mp
 from datetime import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from dotenv import load_dotenv
 from selenium.webdriver import Remote
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnection
 
-load_dotenv()
 
 def get_product_page_links() -> List[str]:
     csv_file_name = "asda_product_links.csv"
@@ -63,6 +61,7 @@ class AsdaProductScraper:
                         'review_count',
                         'tags',                       
                         'categories',
+                        'nutrition',
                         'product_url',
                         'image_url',                            
                         'last_updated']
@@ -131,6 +130,23 @@ class AsdaProductScraper:
                         except:
                             pass
                         
+                        nutritions = { "values": [] }
+                        
+                        try:
+                          nutrition_table = product_page.find("div", {"data-auto-id" : "nutritionTable"})
+                          nutrition_titles = [title.get_text(strip=True) for title in nutrition_table.find_all("div", class_="pdp-description-reviews__nutrition-cell pdp-description-reviews__nutrition-cell--title")]
+                          nutrition_row_details = nutrition_table.find_all("div", class_="pdp-description-reviews__nutrition-row pdp-description-reviews__nutrition-row--details")
+                          for _id, nutrition_title in enumerate(nutrition_titles):
+                            if _id == 0 or nutrition_title == '' : continue
+                            nutrition = { "unit" : nutrition_title }
+                            for row in nutrition_row_details:
+                              nutrition_cells = row.find_all("div")
+                              if "pdp-description-reviews__nutrition-cell--grouped" in nutrition_cells[0]['class']: continue
+                              nutrition[nutrition_cells[0].get_text(strip=True)] = nutrition_cells[_id].get_text(strip=True)
+                            nutritions["values"].append(nutrition)
+                        except:
+                          nutritions = { "values": [] }
+                          
                         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")    
 
                         logging.info({
@@ -144,6 +160,7 @@ class AsdaProductScraper:
                             'review_count': review_count,
                             'tags': tags,
                             'categories': categories,
+                            'nutrition': nutritions,
                             'product_url': product_link,
                             'image_url': image_url,
                             'last_updated': now
@@ -160,6 +177,7 @@ class AsdaProductScraper:
                         'review_count': review_count,
                         'tags': tags,
                         'categories': categories,
+                        'nutrition': nutritions,
                         'product_url': product_link,
                         'image_url': image_url,
                         'last_updated': now
@@ -184,13 +202,13 @@ def run_product_scraper():
     processes: List[mp.Process] = []
     
     try:
-        SBR_WEBDRIVER = f"http://{os.getenv('SELENIUM_WEBDRIVER_AUTH')}@{os.getenv('SELENIUM_SERVER_IP')}:{os.getenv('SELENIUM_SERVER_PORT')}"
+        SELENIUM_GRID_IP_ADDRESSES = [
+            "95.217.141.220:9515",
+            "65.21.129.16:9515",
+            "135.181.212.76:9515",
+        ]
         
-        try:
-            sbr_connection = ChromiumRemoteConnection(SBR_WEBDRIVER, "goog", "chrome")
-        except Exception as e:
-            logging.warning("Scraping Browser connection failed")
-            raise e
+        sbr_connections = [ChromiumRemoteConnection(f"http://{IP}", "goog", "chrome") for IP in SELENIUM_GRID_IP_ADDRESSES]
 
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--start-maximized")
@@ -201,11 +219,11 @@ def run_product_scraper():
         unit = math.floor(len(asda_product_links) / process_count)
         
         processes = [
-            mp.Process(target=AsdaProductScraper(asda_product_links[unit * i : ], sbr_connection).scrape)
+            mp.Process(target=AsdaProductScraper(asda_product_links[unit * i : ], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).scrape)
             if i == process_count - 1
-            else mp.Process(target=AsdaProductScraper(asda_product_links[unit * i : unit * (i + 1)], sbr_connection).scrape)
+            else mp.Process(target=AsdaProductScraper(asda_product_links[unit * i : unit * (i + 1)], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).scrape)
             for i in range(process_count)
-        ] if len(asda_product_links) >= process_count else [mp.Process(target=AsdaProductScraper(asda_product_links, sbr_connection).scrape)]
+        ] if len(asda_product_links) >= process_count else [mp.Process(target=AsdaProductScraper(asda_product_links, sbr_connections[0]).scrape)]
 
         for process in processes:
             process.start()

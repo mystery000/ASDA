@@ -7,16 +7,12 @@ import logging.handlers
 from typing import List
 import multiprocessing as mp
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver import Remote
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnection
-
-
-load_dotenv()
 
 class AsdaScraper:
     _aisle_links: List[str]
@@ -95,20 +91,20 @@ def run_category_scraper():
     processes: List[mp.Process] = []
     
     try:
-        SBR_WEBDRIVER = f"http://{os.getenv('SELENIUM_WEBDRIVER_AUTH')}@{os.getenv('SELENIUM_SERVER_IP')}:{os.getenv('SELENIUM_SERVER_PORT')}"
+        SELENIUM_GRID_IP_ADDRESSES = [
+            "95.217.141.220:9515",
+            "65.21.129.16:9515",
+            "135.181.212.76:9515",
+        ]
         
-        try:
-            sbr_connection = ChromiumRemoteConnection(SBR_WEBDRIVER, "goog", "chrome")
-        except Exception as e:
-            logging.warning("Scraping Browser connection failed")
-            raise e
+        sbr_connections = [ChromiumRemoteConnection(f"http://{IP}", "goog", "chrome") for IP in SELENIUM_GRID_IP_ADDRESSES]
 
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--start-maximized")
         
         aisle_links: List[str] = []
             
-        with Remote(sbr_connection, options=chrome_options) as driver:
+        with Remote(sbr_connections[0], options=chrome_options) as driver:
             driver.get("https://groceries.asda.com/sitemap")
             WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "cat__taxonomy")))
             html = driver.page_source
@@ -133,11 +129,11 @@ def run_category_scraper():
         unit = math.floor(len(aisle_links) / process_count)
         
         processes = [
-            mp.Process(target=AsdaScraper(aisle_links[unit * i : ], sbr_connection).run)
+            mp.Process(target=AsdaScraper(aisle_links[unit * i : ], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).run)
             if i == process_count - 1
-            else mp.Process(target=AsdaScraper(aisle_links[unit * i : unit * (i + 1)], sbr_connection).run)
+            else mp.Process(target=AsdaScraper(aisle_links[unit * i : unit * (i + 1)], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).run)
             for i in range(process_count)
-        ] if len(aisle_links) >= process_count else [mp.Process(target=AsdaScraper(aisle_links, sbr_connection).run)]
+        ] if len(aisle_links) >= process_count else [mp.Process(target=AsdaScraper(aisle_links, sbr_connections[0]).run)]
 
         for process in processes:
             process.start()
