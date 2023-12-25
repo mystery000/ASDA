@@ -20,13 +20,16 @@ from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnecti
 def get_product_page_links() -> List[str]:
     csv_file_name = "asda_product_links.csv"
     links: List[str] = []
+    
     try:
         if os.path.exists(csv_file_name):
             products = pandas.read_csv(csv_file_name)
             products.drop_duplicates(subset="Link", inplace=True)
             links.extend(products["Link"].values.tolist())
+            
     except pandas.errors.EmptyDataError as e:
         logging.error(f"Error: {str(e)}")
+        
     finally:
         return links
     
@@ -45,7 +48,12 @@ class AsdaProductScraper:
             try:
                 with Remote(self._sbr_connection, options=chrome_options) as driver:
                     driver.get(product_link)
-                    WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "pdp-main-details")))
+                    
+                    try:
+                        WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "pdp-main-details")))
+                    except:
+                        continue
+                    
                     html = driver.page_source
                     page = BeautifulSoup(html, "html5lib")
                     
