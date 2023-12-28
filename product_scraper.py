@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import math
+import json
 import pandas
 import logging
 import logging.handlers
@@ -172,7 +173,7 @@ class AsdaProductScraper:
                             'review_count': review_count,
                             'tags': tags,
                             'categories': categories,
-                            'nutrition': nutritions,
+                            'nutrition': json.dumps(nutritions),
                             'product_url': product_link,
                             'image_url': image_url,
                             'last_updated': now
@@ -189,7 +190,7 @@ class AsdaProductScraper:
                         'review_count': review_count,
                         'tags': tags,
                         'categories': categories,
-                        'nutrition': nutritions,
+                        'nutrition': json.dumps(nutritions),
                         'product_url': product_link,
                         'image_url': image_url,
                         'last_updated': now
