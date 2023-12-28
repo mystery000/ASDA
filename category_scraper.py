@@ -8,6 +8,7 @@ from typing import List
 import multiprocessing as mp
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from config import SELENIUM_SERVERS
 from selenium.webdriver import Remote
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -101,13 +102,7 @@ def run_category_scraper():
     processes: List[mp.Process] = []
     
     try:
-        SELENIUM_GRID_IP_ADDRESSES = [
-            "18.169.27.82:9515",
-            "13.42.66.41:9515",
-            "18.171.169.136:9515"
-        ]
-        
-        sbr_connections = [ChromiumRemoteConnection(f"http://{IP}", "goog", "chrome") for IP in SELENIUM_GRID_IP_ADDRESSES]
+        sbr_connections = [ChromiumRemoteConnection(SELENIUM_SERVER, "google", "chrome") for SELENIUM_SERVER in SELENIUM_SERVERS]
 
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--start-maximized")
@@ -139,13 +134,13 @@ def run_category_scraper():
             aisle_links = []
             logging.warning(f"Exception: {str(e)}")
                     
-        process_count = 6
+        process_count = len(SELENIUM_SERVERS) * 2 # Assign two browser sessions per Grid server
         unit = math.floor(len(aisle_links) / process_count)
         
         processes = [
-            mp.Process(target=AsdaScraper(aisle_links[unit * i : ], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).run)
+            mp.Process(target=AsdaScraper(aisle_links[unit * i : ], sbr_connections[i % len(SELENIUM_SERVERS)]).run)
             if i == process_count - 1
-            else mp.Process(target=AsdaScraper(aisle_links[unit * i : unit * (i + 1)], sbr_connections[i % len(SELENIUM_GRID_IP_ADDRESSES)]).run)
+            else mp.Process(target=AsdaScraper(aisle_links[unit * i : unit * (i + 1)], sbr_connections[i % len(SELENIUM_SERVERS)]).run)
             for i in range(process_count)
         ] if len(aisle_links) >= process_count else [mp.Process(target=AsdaScraper(aisle_links, sbr_connections[0]).run)]
 
